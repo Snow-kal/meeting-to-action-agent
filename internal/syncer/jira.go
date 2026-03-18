@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Snow-kal/meeting-to-action-agent/internal/domain"
 )
@@ -19,6 +20,7 @@ type JiraClient struct {
 	Email      string
 	Token      string
 	DryRun     bool
+	Retry      RetryConfig
 	HTTPClient *http.Client
 }
 
@@ -29,6 +31,10 @@ func NewJiraClientFromEnv(dryRun bool) *JiraClient {
 		Email:      strings.TrimSpace(os.Getenv("JIRA_EMAIL")),
 		Token:      strings.TrimSpace(os.Getenv("JIRA_TOKEN")),
 		DryRun:     dryRun,
+		Retry: RetryConfig{
+			MaxAttempts: 3,
+			BaseBackoff: 200 * time.Millisecond,
+		},
 		HTTPClient: &http.Client{},
 	}
 }
@@ -52,7 +58,12 @@ func (c *JiraClient) SyncTasks(ctx context.Context, tasks []domain.Task) ([]doma
 	}
 
 	for _, task := range tasks {
-		remoteID, err := c.createIssue(ctx, task)
+		var remoteID string
+		err := doWithRetry(ctx, c.Retry, func() error {
+			var createErr error
+			remoteID, createErr = c.createIssue(ctx, task)
+			return createErr
+		})
 		if err != nil {
 			results = append(results, domain.SyncResult{
 				TaskID: task.ID,
@@ -113,7 +124,10 @@ func (c *JiraClient) createIssue(ctx context.Context, task domain.Task) (string,
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 {
-		return "", fmt.Errorf("jira 返回 %d: %s", resp.StatusCode, string(respBody))
+		return "", &HTTPStatusError{
+			StatusCode: resp.StatusCode,
+			Message:    fmt.Sprintf("jira 返回 %d: %s", resp.StatusCode, string(respBody)),
+		}
 	}
 
 	var parsed struct {

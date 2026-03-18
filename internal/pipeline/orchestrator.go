@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Snow-kal/meeting-to-action-agent/internal/agents"
@@ -23,6 +24,7 @@ const (
 type Options struct {
 	MeetingDate time.Time
 	SyncTarget  SyncTarget
+	SyncTimeout time.Duration
 }
 
 type Orchestrator struct {
@@ -79,7 +81,7 @@ func (o *Orchestrator) Run(ctx context.Context, rawText string, opts Options) (*
 		if o.Jira == nil {
 			return nil, fmt.Errorf("jira syncer 未配置")
 		}
-		synced, err := o.Jira.SyncTasks(ctx, reviewedTasks)
+		synced, err := runSyncWithTimeout(ctx, o.Jira, reviewedTasks, opts.SyncTimeout)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +90,7 @@ func (o *Orchestrator) Run(ctx context.Context, rawText string, opts Options) (*
 		if o.Notion == nil {
 			return nil, fmt.Errorf("notion syncer 未配置")
 		}
-		synced, err := o.Notion.SyncTasks(ctx, reviewedTasks)
+		synced, err := runSyncWithTimeout(ctx, o.Notion, reviewedTasks, opts.SyncTimeout)
 		if err != nil {
 			return nil, err
 		}
@@ -97,14 +99,32 @@ func (o *Orchestrator) Run(ctx context.Context, rawText string, opts Options) (*
 		if o.Jira == nil || o.Notion == nil {
 			return nil, fmt.Errorf("jira/notion syncer 未配置")
 		}
-		jiraSynced, err := o.Jira.SyncTasks(ctx, reviewedTasks)
-		if err != nil {
-			return nil, err
+
+		var (
+			jiraSynced   []domain.SyncResult
+			notionSynced []domain.SyncResult
+			jiraErr      error
+			notionErr    error
+		)
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			jiraSynced, jiraErr = runSyncWithTimeout(ctx, o.Jira, reviewedTasks, opts.SyncTimeout)
+		}()
+		go func() {
+			defer wg.Done()
+			notionSynced, notionErr = runSyncWithTimeout(ctx, o.Notion, reviewedTasks, opts.SyncTimeout)
+		}()
+		wg.Wait()
+
+		if jiraErr != nil {
+			return nil, jiraErr
 		}
-		notionSynced, err := o.Notion.SyncTasks(ctx, reviewedTasks)
-		if err != nil {
-			return nil, err
+		if notionErr != nil {
+			return nil, notionErr
 		}
+
 		result.Synced = append(result.Synced, jiraSynced...)
 		result.Synced = append(result.Synced, notionSynced...)
 	case SyncNone:
@@ -113,4 +133,18 @@ func (o *Orchestrator) Run(ctx context.Context, rawText string, opts Options) (*
 	}
 
 	return result, nil
+}
+
+func runSyncWithTimeout(
+	ctx context.Context,
+	client syncer.TaskSyncer,
+	tasks []domain.Task,
+	timeout time.Duration,
+) ([]domain.SyncResult, error) {
+	if timeout <= 0 {
+		return client.SyncTasks(ctx, tasks)
+	}
+	syncCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return client.SyncTasks(syncCtx, tasks)
 }

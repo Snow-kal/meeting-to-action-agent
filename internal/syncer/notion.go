@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Snow-kal/meeting-to-action-agent/internal/domain"
 )
@@ -18,6 +19,7 @@ type NotionClient struct {
 	Token      string
 	DatabaseID string
 	DryRun     bool
+	Retry      RetryConfig
 	HTTPClient *http.Client
 }
 
@@ -31,6 +33,10 @@ func NewNotionClientFromEnv(dryRun bool) *NotionClient {
 		Token:      strings.TrimSpace(os.Getenv("NOTION_TOKEN")),
 		DatabaseID: strings.TrimSpace(os.Getenv("NOTION_DATABASE_ID")),
 		DryRun:     dryRun,
+		Retry: RetryConfig{
+			MaxAttempts: 3,
+			BaseBackoff: 200 * time.Millisecond,
+		},
 		HTTPClient: &http.Client{},
 	}
 }
@@ -54,7 +60,12 @@ func (c *NotionClient) SyncTasks(ctx context.Context, tasks []domain.Task) ([]do
 	}
 
 	for _, task := range tasks {
-		remoteID, err := c.createPage(ctx, task)
+		var remoteID string
+		err := doWithRetry(ctx, c.Retry, func() error {
+			var createErr error
+			remoteID, createErr = c.createPage(ctx, task)
+			return createErr
+		})
 		if err != nil {
 			results = append(results, domain.SyncResult{
 				TaskID: task.ID,
@@ -136,7 +147,10 @@ func (c *NotionClient) createPage(ctx context.Context, task domain.Task) (string
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 {
-		return "", fmt.Errorf("notion 返回 %d: %s", resp.StatusCode, string(respBody))
+		return "", &HTTPStatusError{
+			StatusCode: resp.StatusCode,
+			Message:    fmt.Sprintf("notion 返回 %d: %s", resp.StatusCode, string(respBody)),
+		}
 	}
 
 	var parsed struct {
