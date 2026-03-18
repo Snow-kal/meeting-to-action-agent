@@ -90,7 +90,23 @@ func TestNotionClientDryRun(t *testing.T) {
 func TestNotionClientLive(t *testing.T) {
 	var requestBody string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/pages" {
+		switch r.URL.Path {
+		case "/v1/databases/db1":
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+  "properties": {
+    "任务": {"type":"title"},
+    "负责人": {"type":"rich_text"},
+    "截止": {"type":"date"},
+    "描述": {"type":"rich_text"},
+    "依赖": {"type":"rich_text"},
+    "任务ID": {"type":"rich_text"}
+  }
+}`))
+			return
+		case "/v1/pages":
+		default:
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 		if r.Header.Get("Authorization") == "" {
@@ -132,5 +148,62 @@ func TestNotionClientLive(t *testing.T) {
 		if !strings.Contains(requestBody, field) {
 			t.Fatalf("request body missing mapped field %s: %s", field, requestBody)
 		}
+	}
+}
+
+func TestNotionClientMinimalSchemaTitleOnly(t *testing.T) {
+	var requestBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/databases/db1":
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+  "properties": {
+    "名称": {"type":"title"}
+  }
+}`))
+			return
+		case "/v1/pages":
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		body, _ := io.ReadAll(r.Body)
+		requestBody = string(body)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"id":"notion-page-2"}`))
+	}))
+	defer srv.Close()
+
+	client := &NotionClient{
+		BaseURL:    srv.URL + "/v1/pages",
+		Token:      "token",
+		DatabaseID: "db1",
+		DryRun:     false,
+		Mapping: config.NotionFieldMapping{
+			Title:        "Name",
+			Owner:        "Owner",
+			DueDate:      "Due",
+			Description:  "Description",
+			Dependencies: "Dependencies",
+			TaskID:       "TaskID",
+		},
+		HTTPClient: srv.Client(),
+	}
+	results, err := client.SyncTasks(context.Background(), []domain.Task{
+		{ID: "TASK-001", Title: "示例任务", Description: "描述", Owner: "A"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 1 || results[0].Status != "synced" {
+		t.Fatalf("unexpected results: %+v", results)
+	}
+	if !strings.Contains(requestBody, "名称") {
+		t.Fatalf("request should write title field 名称, body=%s", requestBody)
+	}
+	if strings.Contains(requestBody, "Owner") || strings.Contains(requestBody, "Description") {
+		t.Fatalf("request should skip non-existing properties, body=%s", requestBody)
 	}
 }

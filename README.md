@@ -132,6 +132,8 @@ Notion:
 - `NOTION_TOKEN`
 - `NOTION_DATABASE_ID`
 
+说明：Notion 同步会自动读取数据库字段结构。即使数据库仅有标题列（如 `名称`），也可先完成写入；其它字段存在时会自动补写。
+
 ## 字段映射配置
 
 通过 `-mapping-config` 指定 JSON 文件，实现 Jira/Notion 字段模板自定义。示例见：

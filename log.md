@@ -125,3 +125,10 @@
 - 修复任务标题截断逻辑，改为按字符（rune）截断，避免按字节截断导致 `�`。
 - 覆盖场景包括：行动项标题截断、由决策生成任务标题截断。
 - 新增回归测试，验证中文长文本截断后仍为合法 UTF-8 字符串。
+
+## 19) fix: make Notion sync compatible with minimal databases
+
+- Notion 同步前自动读取数据库 schema（`/v1/databases/{id}`），按真实字段类型构建写入 payload。
+- 标题字段自动识别为数据库中的 `title` 字段，不再强依赖固定 `Name` 名称。
+- 仅对数据库中存在的可匹配字段写入（rich_text/date），避免因缺少 `Owner/Due/...` 列导致失败。
+- 新增测试覆盖：完整 schema 场景 + 仅标题列（`名称`）最小数据库场景。
