@@ -66,3 +66,22 @@
 - `AGENT.MD` 新增并勾选三期任务（R1-R5）与验证记录。
 - `README.md` 增加 HTTP API 用法、LLM 混合模式配置、字段映射配置说明。
 - `log.md` 增补第 7-9 次提交改动摘要。
+
+## 10) feat: add web console for preview, accept sync and feedback revise
+
+- 新增内嵌静态前端页面（`index.html/styles.css/app.js`），默认由 API 服务根路径 `/` 提供。
+- 页面支持会议记录输入、概览展示、状态反馈、移动端适配与简洁视觉风格。
+- 打通“先预览后确认”流程：预览调用 `/run`（`sync_target=none`），接受后按选择同步 Jira/Notion。
+- 打通“不接受->意见反馈->自动改写重生成”流程。
+- API 服务新增静态资源路由，支持根路径返回前端页面。
+
+## 11) test: add web page availability coverage
+
+- 新增 API 层测试：`GET /` 返回前端页面并包含标题文本。
+- 回归验证 API 与编排链路测试均通过。
+
+## 12) docs: update phase4 checklist and frontend usage
+
+- `AGENT.MD` 新增并勾选四期任务（F1-F6）与测试验证结果。
+- `README.md` 增加前端页面启动/访问与交互流程说明。
+- `log.md` 增补第 10-12 次提交改动摘要。

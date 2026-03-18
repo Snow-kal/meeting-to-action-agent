@@ -37,6 +37,19 @@ go run ./cmd/meeting-to-action -input ./meeting.txt -meeting-date 2026-03-18 -sy
 go run ./cmd/meeting-to-action-api -addr :8080 -dry-run=true -sync-target none -llm-mode off
 ```
 
+浏览器打开：
+
+```bash
+http://localhost:8080/
+```
+
+页面流程：
+
+- 粘贴会议记录后点击“生成概览”
+- 查看决策/任务/检查项概览
+- 点击“接受并同步”后写入 Jira/Notion
+- 点击“不接受，提交反馈”并填写意见后自动改写重生成
+
 健康检查：
 
 ```bash
