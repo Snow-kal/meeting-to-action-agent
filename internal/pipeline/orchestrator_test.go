@@ -3,6 +3,8 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -140,5 +142,44 @@ func TestOrchestratorHybridLLM(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("expected llm task merged")
+	}
+}
+
+func TestMeetingValidationABCD(t *testing.T) {
+	orch := NewOrchestrator(
+		agents.NewRecorderAgent(),
+		agents.NewDecisionAgent(),
+		agents.NewTaskPlannerAgent(),
+		agents.NewReviewerAgent(),
+		nil,
+		syncer.NewJiraClientFromEnv(true),
+		syncer.NewNotionClientFromEnv(true),
+	)
+
+	path := filepath.Join("..", "..", "examples", "meeting.validation.abcd.md")
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read example failed: %v", err)
+	}
+
+	result, err := orch.Run(context.Background(), string(body), Options{
+		MeetingDate: time.Date(2026, 3, 18, 10, 0, 0, 0, time.Local),
+		SyncTarget:  SyncNone,
+	})
+	if err != nil {
+		t.Fatalf("run failed: %v", err)
+	}
+	if len(result.Tasks) < 4 {
+		t.Fatalf("expected at least 4 tasks, got %d", len(result.Tasks))
+	}
+
+	ownerSet := map[string]bool{}
+	for _, task := range result.Tasks {
+		ownerSet[task.Owner] = true
+	}
+	for _, owner := range []string{"A", "B", "C", "D"} {
+		if !ownerSet[owner] {
+			t.Fatalf("expected owner %s in extracted tasks", owner)
+		}
 	}
 }

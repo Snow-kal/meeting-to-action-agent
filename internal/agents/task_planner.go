@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	reAtOwner     = regexp.MustCompile(`@([\p{Han}A-Za-z0-9_-]{2,20})`)
-	reOwnerLabel  = regexp.MustCompile(`(?:负责人|owner)[:：=]\s*([\p{Han}A-Za-z0-9_-]{2,20})`)
-	reOwnerAction = regexp.MustCompile(`([\p{Han}A-Za-z0-9_-]{2,20})\s*负责`)
+	reAtOwner     = regexp.MustCompile(`@([\p{Han}A-Za-z0-9_-]{1,20})`)
+	reOwnerLabel  = regexp.MustCompile(`(?:负责人|owner)[:：=]\s*([\p{Han}A-Za-z0-9_-]{1,20})`)
+	reOwnerAction = regexp.MustCompile(`([\p{Han}A-Za-z0-9_-]{1,20})\s*负责`)
 	reDepends     = regexp.MustCompile(`(?:依赖|depends on)[:：\s]*([A-Z]+-\d+)`)
 )
 

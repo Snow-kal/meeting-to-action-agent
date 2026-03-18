@@ -88,6 +88,18 @@ curl -X POST http://localhost:8080/run \
 
 兼容字段：`raw_text`、`text`、`date`。
 
+## 会议记录验证样例（A/B/C/D）
+
+已提供验证样例：
+
+- `examples/meeting.validation.abcd.md`
+
+可直接验证：
+
+```bash
+go run ./cmd/meeting-to-action -input ./examples/meeting.validation.abcd.md -meeting-date 2026-03-18 -sync-target none -dry-run=true -output result.json
+```
+
 ## 同步稳定性
 
 - Jira/Notion 同步支持对 `429`、`5xx`、网络异常自动重试

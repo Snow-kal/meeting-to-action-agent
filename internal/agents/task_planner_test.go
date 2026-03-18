@@ -33,3 +33,22 @@ func TestTaskPlannerPlan(t *testing.T) {
 		t.Fatalf("unexpected dependencies: %+v", task.Dependencies)
 	}
 }
+
+func TestTaskPlannerSingleLetterOwner(t *testing.T) {
+	base := time.Date(2026, 3, 18, 10, 0, 0, 0, time.Local)
+	record := domain.MeetingRecord{
+		MeetingDate: base,
+		Lines: []string{
+			"行动项：A 负责回归测试，明天完成",
+		},
+	}
+
+	planner := NewTaskPlannerAgent()
+	tasks := planner.Plan(record, nil)
+	if len(tasks) != 1 {
+		t.Fatalf("want 1 task, got %d", len(tasks))
+	}
+	if tasks[0].Owner != "A" {
+		t.Fatalf("want owner A, got %s", tasks[0].Owner)
+	}
+}
