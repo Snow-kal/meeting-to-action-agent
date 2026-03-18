@@ -3,6 +3,7 @@ package agents
 import (
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/Snow-kal/meeting-to-action-agent/internal/domain"
 )
@@ -50,5 +51,22 @@ func TestTaskPlannerSingleLetterOwner(t *testing.T) {
 	}
 	if tasks[0].Owner != "A" {
 		t.Fatalf("want owner A, got %s", tasks[0].Owner)
+	}
+}
+
+func TestTaskTitleTruncationKeepsUTF8Valid(t *testing.T) {
+	longChinese := "行动项：这是一个很长很长的中文任务标题用于验证截断不会把UTF8字符切坏导致乱码和替换符号出现"
+	title := cleanupTaskTitle(longChinese)
+	if !utf8.ValidString(title) {
+		t.Fatalf("title should be valid utf8, got %q", title)
+	}
+
+	planner := NewTaskPlannerAgent()
+	task := planner.buildTaskFromDecision("TASK-001", domain.Decision{
+		ID:   "DEC-001",
+		Text: "这是一个非常非常长的决策内容用于验证按字符截断不会导致乱码和替换符号出现",
+	}, time.Date(2026, 3, 18, 10, 0, 0, 0, time.Local))
+	if !utf8.ValidString(task.Title) {
+		t.Fatalf("decision-based title should be valid utf8, got %q", task.Title)
 	}
 }

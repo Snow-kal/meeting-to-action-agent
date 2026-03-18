@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/Snow-kal/meeting-to-action-agent/internal/domain"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/timeutil"
@@ -81,9 +82,7 @@ func (a *TaskPlannerAgent) buildTaskFromDecision(id string, decision domain.Deci
 	owner := extractOwner(decision.Text)
 	dueDate, _ := timeutil.ExtractDueDate(decision.Text, baseDate)
 	title := "落实决策: " + decision.Text
-	if len(title) > 64 {
-		title = title[:64]
-	}
+	title = truncateByRunes(title, 64)
 
 	return domain.Task{
 		ID:               id,
@@ -137,8 +136,16 @@ func cleanupTaskTitle(line string) string {
 		cleaned = strings.TrimPrefix(cleaned, p)
 	}
 	cleaned = strings.TrimSpace(cleaned)
-	if len(cleaned) > 64 {
-		return cleaned[:64]
+	return truncateByRunes(cleaned, 64)
+}
+
+func truncateByRunes(s string, maxRunes int) string {
+	if maxRunes <= 0 {
+		return ""
 	}
-	return cleaned
+	if utf8.RuneCountInString(s) <= maxRunes {
+		return s
+	}
+	runes := []rune(s)
+	return string(runes[:maxRunes])
 }
