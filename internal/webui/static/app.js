@@ -25,9 +25,7 @@ const feedbackPanel = document.getElementById("feedback-panel");
 const statusText = document.getElementById("status-text");
 const stats = document.getElementById("stats");
 
-const decisionsList = document.getElementById("decisions-list");
 const tasksList = document.getElementById("tasks-list");
-const issuesList = document.getElementById("issues-list");
 const feedbackText = document.getElementById("feedback-text");
 
 const today = new Date().toISOString().slice(0, 10);
@@ -156,38 +154,56 @@ async function callRun(payload) {
 function renderResult(result) {
   state.latestResult = result;
 
-  const dCount = safeLen(result?.decisions);
   const tCount = safeLen(result?.tasks);
-  const iCount = safeLen(result?.issues);
-  const wCount = safeLen(result?.warnings);
+  const syncCount = safeLen(result?.synced);
 
   stats.innerHTML = `
-    <div class="stat"><div class="v">${dCount}</div><div class="k">决策</div></div>
     <div class="stat"><div class="v">${tCount}</div><div class="k">任务</div></div>
-    <div class="stat"><div class="v">${iCount}</div><div class="k">检查项</div></div>
-    <div class="stat"><div class="v">${wCount}</div><div class="k">告警</div></div>
+    <div class="stat"><div class="v">${syncCount}</div><div class="k">同步记录</div></div>
   `;
 
-  fillList(decisionsList, result?.decisions, (d) => `${d.id || ""} ${d.text || ""}`.trim());
-  fillList(tasksList, result?.tasks, (t) => {
-    const due = t?.due_date ? formatDate(t.due_date) : "未设置";
-    return `${t.id || ""} ${t.title || ""} / owner: ${t.owner || "待指派"} / due: ${due}`;
-  });
-  fillList(issuesList, result?.issues, (i) => `${i.task_id || ""} [${i.type || ""}] ${i.message || ""}`);
+  renderTaskList(tasksList, result?.tasks, result?.issues);
 }
 
-function fillList(el, arr, format) {
+function renderTaskList(el, tasks, issues) {
   el.innerHTML = "";
-  if (!Array.isArray(arr) || arr.length === 0) {
+  if (!Array.isArray(tasks) || tasks.length === 0) {
     const li = document.createElement("li");
+    li.className = "task-item";
     li.textContent = "无";
     el.appendChild(li);
     return;
   }
-  arr.forEach((item) => {
+
+  const issueMap = buildIssueMap(issues);
+  tasks.forEach((task) => {
     const li = document.createElement("li");
-    li.className = "fade-in";
-    li.textContent = format(item);
+    li.className = "task-item fade-in";
+
+    const title = document.createElement("p");
+    title.className = "task-title";
+    title.textContent = `${task.id || ""} ${task.title || ""}`.trim();
+    li.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "task-meta";
+
+    const taskIssues = issueMap.get(task.id) || {};
+    const ownerMissing = taskIssues.missing_owner || !task.owner || task.owner === "待指派";
+    const ownerTag = createTag(
+      ownerMissing ? "负责人：暂无" : `负责人：${task.owner}`,
+      ownerMissing ? "tag-missing" : "tag-ok",
+    );
+
+    const dueMissing = taskIssues.missing_due_date || !task.due_date;
+    const dueTag = createTag(
+      dueMissing ? "截止：暂无" : `截止：${formatDate(task.due_date)}`,
+      dueMissing ? "tag-missing" : "tag-ok",
+    );
+
+    meta.appendChild(ownerTag);
+    meta.appendChild(dueTag);
+    li.appendChild(meta);
     el.appendChild(li);
   });
 }
@@ -200,6 +216,26 @@ function formatDate(dateString) {
   const d = new Date(dateString);
   if (Number.isNaN(d.getTime())) return dateString;
   return d.toISOString().slice(0, 10);
+}
+
+function createTag(text, cls) {
+  const span = document.createElement("span");
+  span.className = `tag ${cls}`;
+  span.textContent = text;
+  return span;
+}
+
+function buildIssueMap(issues) {
+  const map = new Map();
+  if (!Array.isArray(issues)) return map;
+  issues.forEach((issue) => {
+    const id = issue?.task_id;
+    const type = issue?.type;
+    if (!id || !type) return;
+    if (!map.has(id)) map.set(id, {});
+    map.get(id)[type] = true;
+  });
+  return map;
 }
 
 function setStatus(text) {

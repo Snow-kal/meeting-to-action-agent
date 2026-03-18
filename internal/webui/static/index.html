@@ -17,109 +17,105 @@
         <p class="subtitle">先生成概览，确认后同步到 Jira / Notion；不满意可反馈并自动改写。</p>
       </header>
 
-      <section class="card input-card">
-        <label for="meeting-content">会议记录</label>
-        <textarea id="meeting-content" placeholder="粘贴会议记录..."></textarea>
+      <div class="workspace">
+        <aside class="sidebar">
+          <section class="card tool-card">
+            <div class="tool-head">
+              <h2>配置小工具</h2>
+              <p>仅在当前浏览器使用，可用于请求级覆盖后端配置。</p>
+            </div>
 
-        <div class="toolbar">
-          <label class="mini">
-            会议日期
-            <input id="meeting-date" type="date" />
-          </label>
+            <div class="tool-grid">
+              <label class="mini">
+                后端 LLM Key
+                <input id="tool-llm-key" type="password" placeholder="sk-..." />
+              </label>
 
-          <label class="mini">
-            LLM 模式
-            <select id="llm-mode">
-              <option value="off">off</option>
-              <option value="hybrid">hybrid</option>
-            </select>
-          </label>
+              <label class="mini">
+                Notion 文档 Key（Database ID）
+                <input id="tool-notion-key" type="text" placeholder="输入 Notion Database ID" />
+              </label>
 
-          <button id="preview-btn" class="btn btn-primary">生成概览</button>
-        </div>
-      </section>
+              <label class="mini">
+                Jira 项目 Key
+                <input id="tool-jira-key" type="text" placeholder="输入 Jira Project Key（如 MTA）" />
+              </label>
+            </div>
 
-      <section class="card tool-card">
-        <div class="tool-head">
-          <h2>配置小工具</h2>
-          <p>仅在当前浏览器使用，可用于请求级覆盖后端配置。</p>
-        </div>
+            <div class="tool-actions">
+              <label class="check">
+                <input id="tool-remember" type="checkbox" checked />
+                记住到本地浏览器
+              </label>
+              <button id="tool-clear-btn" class="btn btn-reject">清空工具配置</button>
+            </div>
+          </section>
+        </aside>
 
-        <div class="tool-grid">
-          <label class="mini">
-            后端 LLM Key
-            <input id="tool-llm-key" type="password" placeholder="sk-..." />
-          </label>
+        <section class="main-column">
+          <section class="card input-card">
+            <label for="meeting-content">会议记录</label>
+            <textarea id="meeting-content" placeholder="粘贴会议记录..."></textarea>
 
-          <label class="mini">
-            Notion 文档 Key（Database ID）
-            <input id="tool-notion-key" type="text" placeholder="输入 Notion Database ID" />
-          </label>
+            <div class="toolbar">
+              <label class="mini">
+                会议日期
+                <input id="meeting-date" type="date" />
+              </label>
 
-          <label class="mini">
-            Jira 项目 Key
-            <input id="tool-jira-key" type="text" placeholder="输入 Jira Project Key（如 MTA）" />
-          </label>
-        </div>
+              <label class="mini">
+                LLM 模式
+                <select id="llm-mode">
+                  <option value="off">off</option>
+                  <option value="hybrid">hybrid</option>
+                </select>
+              </label>
 
-        <div class="tool-actions">
-          <label class="check">
-            <input id="tool-remember" type="checkbox" checked />
-            记住到本地浏览器
-          </label>
-          <button id="tool-clear-btn" class="btn btn-reject">清空工具配置</button>
-        </div>
-      </section>
+              <button id="preview-btn" class="btn btn-primary">生成概览</button>
+            </div>
+          </section>
 
-      <section class="card result-card hidden" id="result-panel">
-        <div class="result-head">
-          <h2>概览结果</h2>
-          <p id="status-text">等待生成</p>
-        </div>
+          <section class="card result-card hidden" id="result-panel">
+            <div class="result-head">
+              <h2>概览结果</h2>
+              <p id="status-text">等待生成</p>
+            </div>
 
-        <div class="stats" id="stats"></div>
-        <div class="columns">
-          <article>
-            <h3>决策</h3>
-            <ul id="decisions-list"></ul>
-          </article>
-          <article>
-            <h3>任务</h3>
-            <ul id="tasks-list"></ul>
-          </article>
-          <article>
-            <h3>Review 提示</h3>
-            <ul id="issues-list"></ul>
-          </article>
-        </div>
+            <div class="stats" id="stats"></div>
+            <article class="task-panel">
+              <h3>任务</h3>
+              <ul id="tasks-list" class="task-list"></ul>
+            </article>
 
-        <div class="actions">
-          <label class="mini">
-            同步目标
-            <select id="sync-target">
-              <option value="jira">Jira</option>
-              <option value="notion">Notion</option>
-              <option value="both" selected>Jira + Notion</option>
-            </select>
-          </label>
+            <div class="actions">
+              <label class="mini">
+                同步目标
+                <select id="sync-target">
+                  <option value="jira">Jira</option>
+                  <option value="notion">Notion</option>
+                  <option value="both" selected>Jira + Notion</option>
+                </select>
+              </label>
 
-          <label class="check">
-            <input id="dry-run" type="checkbox" />
-            演练模式（不真实写入）
-          </label>
+              <label class="check">
+                <input id="dry-run" type="checkbox" />
+                演练模式（不真实写入）
+              </label>
 
-          <button id="accept-btn" class="btn btn-accept">接受并同步</button>
-          <button id="reject-btn" class="btn btn-reject">不接受，提交反馈</button>
-        </div>
-      </section>
+              <button id="accept-btn" class="btn btn-accept">接受并同步</button>
+              <button id="reject-btn" class="btn btn-reject">不接受，提交反馈</button>
+            </div>
+          </section>
 
-      <section class="card feedback-card hidden" id="feedback-panel">
-        <h2>反馈改写</h2>
-        <textarea id="feedback-text" placeholder="例如：任务拆解太粗，请细化到前后端拆分，并补充测试任务。"></textarea>
-        <div class="toolbar">
-          <button id="apply-feedback-btn" class="btn btn-primary">应用反馈并重新生成</button>
-        </div>
-      </section>
+          <section class="card feedback-card hidden" id="feedback-panel">
+            <h2>反馈改写</h2>
+            <textarea id="feedback-text" placeholder="例如：任务拆解太粗，请细化到前后端拆分，并补充测试任务。"></textarea>
+            <div class="toolbar">
+              <button id="apply-feedback-btn" class="btn btn-primary">应用反馈并重新生成</button>
+            </div>
+          </section>
+        </section>
+      </div>
     </main>
 
     <template id="list-item-template">
