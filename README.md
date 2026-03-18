@@ -49,6 +49,7 @@ http://localhost:8080/
 - 查看决策/任务/检查项概览
 - 点击“接受并同步”后写入 Jira/Notion
 - 点击“不接受，提交反馈”并填写意见后自动改写重生成
+- 使用“配置小工具”可按请求设置 `LLM Key`、`Notion Database Key`、`Jira Project Key`
 
 健康检查：
 
@@ -69,7 +70,7 @@ curl -X POST http://localhost:8080/run \
   }'
 ```
 
-请求字段支持：`content`、`meeting_date`、`sync_target`、`dry_run`、`max_retries`、`sync_timeout`、`llm_mode`、`mapping_config_path`、`include_report`。
+请求字段支持：`content`、`meeting_date`、`sync_target`、`dry_run`、`max_retries`、`sync_timeout`、`llm_mode`、`llm_api_key`、`notion_database_id`、`jira_project_key`、`mapping_config_path`、`include_report`。
 
 ## 输入格式
 

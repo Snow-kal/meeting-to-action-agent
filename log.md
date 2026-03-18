@@ -85,3 +85,23 @@
 - `AGENT.MD` 新增并勾选四期任务（F1-F6）与测试验证结果。
 - `README.md` 增加前端页面启动/访问与交互流程说明。
 - `log.md` 增补第 10-12 次提交改动摘要。
+
+## 13) feat: add frontend key tool and request-level key override
+
+- 前端页面新增“配置小工具”，支持填写后端 `LLM Key`、`Notion Database Key`、`Jira Project Key`。
+- 配置支持本地浏览器记忆与一键清空。
+- 前端请求 `/run` 时自动透传 `llm_api_key/notion_database_id/jira_project_key`。
+- 后端 `RunRequest` 与 `ServerOptions` 增加对应字段，支持请求级覆盖。
+- 运行时工厂支持按请求覆盖 LLM API Key、Jira Project Key、Notion Database ID。
+
+## 14) test: add coverage for inline key overrides
+
+- 新增 API 层配置覆盖测试：验证请求里的 key 覆盖服务默认值。
+- 新增运行时工厂测试：hybrid 模式下支持使用请求内联 `LLMAPIKey`。
+- 回归验证整体测试通过。
+
+## 15) docs: update phase5 checklist and API field docs
+
+- `AGENT.MD` 新增并完成五期任务（G1-G5）。
+- `README.md` 增补前端配置小工具说明与新增 API 请求字段。
+- `log.md` 补充第 13-15 次提交摘要。
