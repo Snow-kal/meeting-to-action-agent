@@ -45,4 +45,5 @@ type PipelineResult struct {
 	Tasks     []Task        `json:"tasks"`
 	Issues    []ReviewIssue `json:"issues"`
 	Synced    []SyncResult  `json:"synced,omitempty"`
+	Warnings  []string      `json:"warnings,omitempty"`
 }

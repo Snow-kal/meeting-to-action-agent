@@ -8,11 +8,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/Snow-kal/meeting-to-action-agent/internal/agents"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/input"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/pipeline"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/report"
-	"github.com/Snow-kal/meeting-to-action-agent/internal/syncer"
+	"github.com/Snow-kal/meeting-to-action-agent/internal/runtime"
 )
 
 func main() {
@@ -22,6 +21,8 @@ func main() {
 	syncTimeout := flag.Duration("sync-timeout", 30*time.Second, "同步超时时间，例如 30s/1m")
 	maxRetries := flag.Int("max-retries", 3, "同步失败重试次数（含首次请求）")
 	dryRun := flag.Bool("dry-run", true, "是否 dry-run（true 时只模拟同步）")
+	llmMode := flag.String("llm-mode", "off", "LLM 模式：off/hybrid")
+	mappingConfig := flag.String("mapping-config", "", "字段映射配置 JSON 文件路径")
 	outputPath := flag.String("output", "result.json", "结果输出 JSON 路径")
 	reportPath := flag.String("report", "", "可选：输出 Markdown 报告路径")
 	flag.Parse()
@@ -50,24 +51,22 @@ func main() {
 		meetingDate = parsed
 	}
 
-	jiraClient := syncer.NewJiraClientFromEnv(*dryRun)
-	notionClient := syncer.NewNotionClientFromEnv(*dryRun)
-	jiraClient.Retry.MaxAttempts = *maxRetries
-	notionClient.Retry.MaxAttempts = *maxRetries
-
-	orch := pipeline.NewOrchestrator(
-		agents.NewRecorderAgent(),
-		agents.NewDecisionAgent(),
-		agents.NewTaskPlannerAgent(),
-		agents.NewReviewerAgent(),
-		jiraClient,
-		notionClient,
-	)
+	orch, err := runtime.NewOrchestrator(runtime.FactoryOptions{
+		DryRun:            *dryRun,
+		MaxRetries:        *maxRetries,
+		MappingConfigPath: *mappingConfig,
+		LLMMode:           pipeline.LLMMode(*llmMode),
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "初始化编排器失败: %v\n", err)
+		os.Exit(1)
+	}
 
 	result, err := orch.Run(context.Background(), meetingInput.Content, pipeline.Options{
 		MeetingDate: meetingDate,
 		SyncTarget:  pipeline.SyncTarget(*syncTarget),
 		SyncTimeout: *syncTimeout,
+		LLMMode:     pipeline.LLMMode(*llmMode),
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "执行失败: %v\n", err)

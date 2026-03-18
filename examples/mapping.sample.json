@@ -1,0 +1,18 @@
+{
+  "jira": {
+    "summary": "summary",
+    "description": "description",
+    "due_date": "duedate",
+    "owner": "customfield_10001",
+    "dependencies": "customfield_10002",
+    "task_id": "customfield_10003"
+  },
+  "notion": {
+    "title": "任务名称",
+    "owner": "负责人",
+    "due_date": "截止日期",
+    "description": "任务描述",
+    "dependencies": "依赖",
+    "task_id": "外部任务ID"
+  }
+}

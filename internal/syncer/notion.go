@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Snow-kal/meeting-to-action-agent/internal/config"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/domain"
 )
 
@@ -20,6 +21,7 @@ type NotionClient struct {
 	DatabaseID string
 	DryRun     bool
 	Retry      RetryConfig
+	Mapping    config.NotionFieldMapping
 	HTTPClient *http.Client
 }
 
@@ -37,6 +39,7 @@ func NewNotionClientFromEnv(dryRun bool) *NotionClient {
 			MaxAttempts: 3,
 			BaseBackoff: 200 * time.Millisecond,
 		},
+		Mapping:    config.DefaultMappingConfig().Notion,
 		HTTPClient: &http.Client{},
 	}
 }
@@ -87,28 +90,20 @@ func (c *NotionClient) SyncTasks(ctx context.Context, tasks []domain.Task) ([]do
 }
 
 func (c *NotionClient) createPage(ctx context.Context, task domain.Task) (string, error) {
-	props := map[string]any{
-		"Name": map[string]any{
-			"title": []map[string]any{
-				{
-					"text": map[string]any{
-						"content": task.Title,
-					},
-				},
-			},
-		},
-		"Owner": map[string]any{
-			"rich_text": []map[string]any{
-				{
-					"text": map[string]any{
-						"content": task.Owner,
-					},
-				},
-			},
-		},
+	props := map[string]any{}
+	setNotionTitle(props, c.Mapping.Title, task.Title)
+	setNotionRichText(props, c.Mapping.Owner, task.Owner)
+	setNotionRichText(props, c.Mapping.Description, task.Description)
+	setNotionRichText(props, c.Mapping.TaskID, task.ID)
+	if len(task.Dependencies) > 0 {
+		setNotionRichText(props, c.Mapping.Dependencies, strings.Join(task.Dependencies, ", "))
 	}
 	if task.DueDate != nil {
-		props["Due"] = map[string]any{
+		dueField := strings.TrimSpace(c.Mapping.DueDate)
+		if dueField == "" {
+			dueField = "Due"
+		}
+		props[dueField] = map[string]any{
 			"date": map[string]any{
 				"start": task.DueDate.Format("2006-01-02"),
 			},
@@ -163,4 +158,36 @@ func (c *NotionClient) createPage(ctx context.Context, task domain.Task) (string
 		return "", fmt.Errorf("notion 返回体缺少 id")
 	}
 	return parsed.ID, nil
+}
+
+func setNotionTitle(props map[string]any, fieldName, value string) {
+	name := strings.TrimSpace(fieldName)
+	if name == "" {
+		return
+	}
+	props[name] = map[string]any{
+		"title": []map[string]any{
+			{
+				"text": map[string]any{
+					"content": value,
+				},
+			},
+		},
+	}
+}
+
+func setNotionRichText(props map[string]any, fieldName, value string) {
+	name := strings.TrimSpace(fieldName)
+	if name == "" || strings.TrimSpace(value) == "" {
+		return
+	}
+	props[name] = map[string]any{
+		"rich_text": []map[string]any{
+			{
+				"text": map[string]any{
+					"content": value,
+				},
+			},
+		},
+	}
 }

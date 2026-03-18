@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Snow-kal/meeting-to-action-agent/internal/config"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/domain"
 )
 
@@ -21,6 +22,7 @@ type JiraClient struct {
 	Token      string
 	DryRun     bool
 	Retry      RetryConfig
+	Mapping    config.JiraFieldMapping
 	HTTPClient *http.Client
 }
 
@@ -35,6 +37,7 @@ func NewJiraClientFromEnv(dryRun bool) *JiraClient {
 			MaxAttempts: 3,
 			BaseBackoff: 200 * time.Millisecond,
 		},
+		Mapping:    config.DefaultMappingConfig().Jira,
 		HTTPClient: &http.Client{},
 	}
 }
@@ -84,19 +87,26 @@ func (c *JiraClient) SyncTasks(ctx context.Context, tasks []domain.Task) ([]doma
 }
 
 func (c *JiraClient) createIssue(ctx context.Context, task domain.Task) (string, error) {
-	body := map[string]any{
-		"fields": map[string]any{
-			"project": map[string]any{
-				"key": c.ProjectKey,
-			},
-			"summary":     task.Title,
-			"description": task.Description,
+	fields := map[string]any{
+		"project": map[string]any{
+			"key": c.ProjectKey,
 		},
 	}
+	setIfPresent(fields, c.Mapping.Summary, task.Title)
+	setIfPresent(fields, c.Mapping.Description, task.Description)
 	if task.DueDate != nil {
-		fields := body["fields"].(map[string]any)
-		fields["duedate"] = task.DueDate.Format("2006-01-02")
+		setIfPresent(fields, c.Mapping.DueDate, task.DueDate.Format("2006-01-02"))
 	}
+	if task.Owner != "" {
+		setIfPresent(fields, c.Mapping.Owner, task.Owner)
+	}
+	if len(task.Dependencies) > 0 {
+		setIfPresent(fields, c.Mapping.Dependencies, strings.Join(task.Dependencies, ", "))
+	}
+	if task.ID != "" {
+		setIfPresent(fields, c.Mapping.TaskID, task.ID)
+	}
+	body := map[string]any{"fields": fields}
 
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -144,4 +154,12 @@ func (c *JiraClient) createIssue(ctx context.Context, task domain.Task) (string,
 		return parsed.ID, nil
 	}
 	return "", fmt.Errorf("jira 返回体缺少 key/id")
+}
+
+func setIfPresent(fields map[string]any, key, value string) {
+	k := strings.TrimSpace(key)
+	if k == "" {
+		return
+	}
+	fields[k] = value
 }
