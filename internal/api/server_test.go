@@ -72,3 +72,24 @@ func TestRunEndpointBadRequest(t *testing.T) {
 		t.Fatalf("want 400, got %d", rr.Code)
 	}
 }
+
+func TestWebIndexPage(t *testing.T) {
+	server := NewServer(ServerOptions{
+		DryRun:      true,
+		MaxRetries:  2,
+		SyncTimeout: 10 * time.Second,
+		SyncTarget:  pipeline.SyncNone,
+		LLMMode:     pipeline.LLMOff,
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rr := httptest.NewRecorder()
+	server.Handler().ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d", rr.Code)
+	}
+	if !bytes.Contains(rr.Body.Bytes(), []byte("Meeting To Action Console")) {
+		t.Fatalf("index page missing expected title")
+	}
+}
