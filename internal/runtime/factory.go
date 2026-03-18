@@ -15,6 +15,9 @@ type FactoryOptions struct {
 	MaxRetries        int
 	MappingConfigPath string
 	LLMMode           pipeline.LLMMode
+	LLMAPIKey         string
+	JiraProjectKey    string
+	NotionDatabaseID  string
 }
 
 func NewOrchestrator(opts FactoryOptions) (*pipeline.Orchestrator, error) {
@@ -29,10 +32,19 @@ func NewOrchestrator(opts FactoryOptions) (*pipeline.Orchestrator, error) {
 	notionClient.Retry.MaxAttempts = opts.MaxRetries
 	jiraClient.Mapping = mapping.Jira
 	notionClient.Mapping = mapping.Notion
+	if opts.JiraProjectKey != "" {
+		jiraClient.ProjectKey = opts.JiraProjectKey
+	}
+	if opts.NotionDatabaseID != "" {
+		notionClient.DatabaseID = opts.NotionDatabaseID
+	}
 
 	var extractor pipeline.LLMExtractor
 	if opts.LLMMode == pipeline.LLMHybrid {
 		llmClient := llm.NewOpenAIClientFromEnv()
+		if opts.LLMAPIKey != "" {
+			llmClient.APIKey = opts.LLMAPIKey
+		}
 		if llmClient.APIKey == "" {
 			return nil, fmt.Errorf("LLM 混合模式需要配置 OPENAI_API_KEY")
 		}

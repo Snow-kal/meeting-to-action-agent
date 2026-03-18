@@ -39,6 +39,38 @@
         </div>
       </section>
 
+      <section class="card tool-card">
+        <div class="tool-head">
+          <h2>配置小工具</h2>
+          <p>仅在当前浏览器使用，可用于请求级覆盖后端配置。</p>
+        </div>
+
+        <div class="tool-grid">
+          <label class="mini">
+            后端 LLM Key
+            <input id="tool-llm-key" type="password" placeholder="sk-..." />
+          </label>
+
+          <label class="mini">
+            Notion 文档 Key（Database ID）
+            <input id="tool-notion-key" type="text" placeholder="输入 Notion Database ID" />
+          </label>
+
+          <label class="mini">
+            Jira 项目 Key
+            <input id="tool-jira-key" type="text" placeholder="输入 Jira Project Key（如 MTA）" />
+          </label>
+        </div>
+
+        <div class="tool-actions">
+          <label class="check">
+            <input id="tool-remember" type="checkbox" checked />
+            记住到本地浏览器
+          </label>
+          <button id="tool-clear-btn" class="btn btn-reject">清空工具配置</button>
+        </div>
+      </section>
+
       <section class="card result-card hidden" id="result-panel">
         <div class="result-head">
           <h2>概览结果</h2>

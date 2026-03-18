@@ -23,6 +23,9 @@ type ServerOptions struct {
 	SyncTarget        pipeline.SyncTarget
 	LLMMode           pipeline.LLMMode
 	MappingConfigPath string
+	LLMAPIKey         string
+	JiraProjectKey    string
+	NotionDatabaseID  string
 }
 
 type Server struct {
@@ -37,6 +40,9 @@ type RunRequest struct {
 	MaxRetries        *int   `json:"max_retries,omitempty"`
 	SyncTimeout       string `json:"sync_timeout,omitempty"`
 	LLMMode           string `json:"llm_mode,omitempty"`
+	LLMAPIKey         string `json:"llm_api_key,omitempty"`
+	JiraProjectKey    string `json:"jira_project_key,omitempty"`
+	NotionDatabaseID  string `json:"notion_database_id,omitempty"`
 	MappingConfigPath string `json:"mapping_config_path,omitempty"`
 	IncludeReport     bool   `json:"include_report,omitempty"`
 }
@@ -98,6 +104,9 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		MaxRetries:        effective.MaxRetries,
 		MappingConfigPath: effective.MappingConfigPath,
 		LLMMode:           effective.LLMMode,
+		LLMAPIKey:         effective.LLMAPIKey,
+		JiraProjectKey:    effective.JiraProjectKey,
+		NotionDatabaseID:  effective.NotionDatabaseID,
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("init failed: %v", err), http.StatusBadRequest)
@@ -158,6 +167,15 @@ func (s *Server) resolveOptions(req RunRequest) (ServerOptions, error) {
 	}
 	if strings.TrimSpace(req.MappingConfigPath) != "" {
 		out.MappingConfigPath = strings.TrimSpace(req.MappingConfigPath)
+	}
+	if strings.TrimSpace(req.LLMAPIKey) != "" {
+		out.LLMAPIKey = strings.TrimSpace(req.LLMAPIKey)
+	}
+	if strings.TrimSpace(req.JiraProjectKey) != "" {
+		out.JiraProjectKey = strings.TrimSpace(req.JiraProjectKey)
+	}
+	if strings.TrimSpace(req.NotionDatabaseID) != "" {
+		out.NotionDatabaseID = strings.TrimSpace(req.NotionDatabaseID)
 	}
 	return out, nil
 }

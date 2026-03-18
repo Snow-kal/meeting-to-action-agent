@@ -110,6 +110,43 @@ textarea {
   align-items: end;
 }
 
+.tool-card {
+  border-style: dashed;
+}
+
+.tool-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.tool-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.tool-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tool-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tool-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
 .mini {
   font-size: 13px;
   color: var(--muted);
@@ -267,6 +304,15 @@ li {
 @media (max-width: 860px) {
   .toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .stats {

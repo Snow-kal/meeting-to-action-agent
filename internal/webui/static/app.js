@@ -9,6 +9,11 @@ const meetingDateEl = document.getElementById("meeting-date");
 const llmModeEl = document.getElementById("llm-mode");
 const syncTargetEl = document.getElementById("sync-target");
 const dryRunEl = document.getElementById("dry-run");
+const toolLLMKeyEl = document.getElementById("tool-llm-key");
+const toolNotionKeyEl = document.getElementById("tool-notion-key");
+const toolJiraKeyEl = document.getElementById("tool-jira-key");
+const toolRememberEl = document.getElementById("tool-remember");
+const toolClearBtn = document.getElementById("tool-clear-btn");
 
 const previewBtn = document.getElementById("preview-btn");
 const acceptBtn = document.getElementById("accept-btn");
@@ -27,6 +32,20 @@ const feedbackText = document.getElementById("feedback-text");
 
 const today = new Date().toISOString().slice(0, 10);
 meetingDateEl.value = today;
+loadToolConfig();
+
+[toolLLMKeyEl, toolNotionKeyEl, toolJiraKeyEl, toolRememberEl].forEach((el) => {
+  el.addEventListener("change", persistToolConfig);
+  el.addEventListener("input", persistToolConfig);
+});
+
+toolClearBtn.addEventListener("click", () => {
+  toolLLMKeyEl.value = "";
+  toolNotionKeyEl.value = "";
+  toolJiraKeyEl.value = "";
+  localStorage.removeItem("mta_tool_config");
+  setStatus("工具配置已清空。");
+});
 
 previewBtn.addEventListener("click", async () => {
   const content = meetingContentEl.value.trim();
@@ -120,10 +139,12 @@ async function previewWithContent(content) {
 }
 
 async function callRun(payload) {
+  const toolConfig = getToolConfigPayload();
+  const reqPayload = { ...payload, ...toolConfig };
   const resp = await fetch("/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(reqPayload),
   });
   if (!resp.ok) {
     const text = await resp.text();
@@ -194,5 +215,44 @@ function setLoading(button, loading) {
   }
   if (button.dataset.origin) {
     button.textContent = button.dataset.origin;
+  }
+}
+
+function getToolConfigPayload() {
+  const payload = {};
+  const llmKey = toolLLMKeyEl.value.trim();
+  const notionKey = toolNotionKeyEl.value.trim();
+  const jiraKey = toolJiraKeyEl.value.trim();
+  if (llmKey) payload.llm_api_key = llmKey;
+  if (notionKey) payload.notion_database_id = notionKey;
+  if (jiraKey) payload.jira_project_key = jiraKey;
+  return payload;
+}
+
+function persistToolConfig() {
+  if (!toolRememberEl.checked) {
+    localStorage.removeItem("mta_tool_config");
+    return;
+  }
+  const data = {
+    llm_api_key: toolLLMKeyEl.value,
+    notion_database_id: toolNotionKeyEl.value,
+    jira_project_key: toolJiraKeyEl.value,
+    remember: toolRememberEl.checked,
+  };
+  localStorage.setItem("mta_tool_config", JSON.stringify(data));
+}
+
+function loadToolConfig() {
+  try {
+    const raw = localStorage.getItem("mta_tool_config");
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    toolLLMKeyEl.value = data.llm_api_key || "";
+    toolNotionKeyEl.value = data.notion_database_id || "";
+    toolJiraKeyEl.value = data.jira_project_key || "";
+    toolRememberEl.checked = data.remember !== false;
+  } catch (err) {
+    localStorage.removeItem("mta_tool_config");
   }
 }
