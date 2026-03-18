@@ -93,3 +93,33 @@ func TestWebIndexPage(t *testing.T) {
 		t.Fatalf("index page missing expected title")
 	}
 }
+
+func TestResolveOptionsWithInlineKeys(t *testing.T) {
+	server := NewServer(ServerOptions{
+		DryRun:            true,
+		MaxRetries:        2,
+		SyncTimeout:       10 * time.Second,
+		SyncTarget:        pipeline.SyncNone,
+		LLMMode:           pipeline.LLMOff,
+		LLMAPIKey:         "server-llm",
+		JiraProjectKey:    "SERVER",
+		NotionDatabaseID:  "server-db",
+		MappingConfigPath: "a.json",
+	})
+
+	opts, err := server.resolveOptions(RunRequest{
+		LLMAPIKey:         "req-llm",
+		JiraProjectKey:    "REQ",
+		NotionDatabaseID:  "req-db",
+		MappingConfigPath: "b.json",
+	})
+	if err != nil {
+		t.Fatalf("resolve failed: %v", err)
+	}
+	if opts.LLMAPIKey != "req-llm" || opts.JiraProjectKey != "REQ" || opts.NotionDatabaseID != "req-db" {
+		t.Fatalf("inline key override failed: %+v", opts)
+	}
+	if opts.MappingConfigPath != "b.json" {
+		t.Fatalf("mapping path override failed: %s", opts.MappingConfigPath)
+	}
+}
