@@ -17,6 +17,7 @@ func TestOrchestratorRun(t *testing.T) {
 		agents.NewDecisionAgent(),
 		agents.NewTaskPlannerAgent(),
 		agents.NewReviewerAgent(),
+		nil,
 		syncer.NewJiraClientFromEnv(true),
 		syncer.NewNotionClientFromEnv(true),
 	)
@@ -49,6 +50,22 @@ type slowSyncer struct {
 	delay time.Duration
 }
 
+type mockExtractor struct{}
+
+func (m mockExtractor) Extract(ctx context.Context, rawText string, meetingDate time.Time) ([]domain.Decision, []domain.Task, error) {
+	return []domain.Decision{
+			{ID: "LLM-1", Text: "确定推进支付重构"},
+		},
+		[]domain.Task{
+			{
+				ID:          "LLM-TASK-1",
+				Title:       "支付重构设计评审",
+				Description: "组织评审会议并输出结论",
+				Owner:       "王五",
+			},
+		}, nil
+}
+
 func (s slowSyncer) SyncTasks(ctx context.Context, tasks []domain.Task) ([]domain.SyncResult, error) {
 	timer := time.NewTimer(s.delay)
 	defer timer.Stop()
@@ -74,6 +91,7 @@ func TestOrchestratorSyncTimeout(t *testing.T) {
 		agents.NewDecisionAgent(),
 		agents.NewTaskPlannerAgent(),
 		agents.NewReviewerAgent(),
+		nil,
 		slowSyncer{delay: 200 * time.Millisecond},
 		slowSyncer{delay: 200 * time.Millisecond},
 	)
@@ -88,5 +106,39 @@ func TestOrchestratorSyncTimeout(t *testing.T) {
 	}
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("want deadline exceeded, got %v", err)
+	}
+}
+
+func TestOrchestratorHybridLLM(t *testing.T) {
+	orch := NewOrchestrator(
+		agents.NewRecorderAgent(),
+		agents.NewDecisionAgent(),
+		agents.NewTaskPlannerAgent(),
+		agents.NewReviewerAgent(),
+		mockExtractor{},
+		syncer.NewJiraClientFromEnv(true),
+		syncer.NewNotionClientFromEnv(true),
+	)
+
+	result, err := orch.Run(context.Background(), "行动项：@张三 明天补充支付联调", Options{
+		MeetingDate: time.Date(2026, 3, 18, 10, 0, 0, 0, time.Local),
+		SyncTarget:  SyncNone,
+		LLMMode:     LLMHybrid,
+	})
+	if err != nil {
+		t.Fatalf("run failed: %v", err)
+	}
+	if len(result.Decisions) == 0 {
+		t.Fatalf("expected decisions from llm merge")
+	}
+	found := false
+	for _, task := range result.Tasks {
+		if task.Title == "支付重构设计评审" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected llm task merged")
 	}
 }
