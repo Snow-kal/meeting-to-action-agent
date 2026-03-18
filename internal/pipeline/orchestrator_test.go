@@ -2,10 +2,12 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/Snow-kal/meeting-to-action-agent/internal/agents"
+	"github.com/Snow-kal/meeting-to-action-agent/internal/domain"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/syncer"
 )
 
@@ -40,5 +42,51 @@ func TestOrchestratorRun(t *testing.T) {
 	}
 	if len(result.Synced) != len(result.Tasks)*2 {
 		t.Fatalf("expected sync results for both targets")
+	}
+}
+
+type slowSyncer struct {
+	delay time.Duration
+}
+
+func (s slowSyncer) SyncTasks(ctx context.Context, tasks []domain.Task) ([]domain.SyncResult, error) {
+	timer := time.NewTimer(s.delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-timer.C:
+	}
+	out := make([]domain.SyncResult, 0, len(tasks))
+	for _, task := range tasks {
+		out = append(out, domain.SyncResult{
+			TaskID: task.ID,
+			Target: "mock",
+			Status: "synced",
+		})
+	}
+	return out, nil
+}
+
+func TestOrchestratorSyncTimeout(t *testing.T) {
+	orch := NewOrchestrator(
+		agents.NewRecorderAgent(),
+		agents.NewDecisionAgent(),
+		agents.NewTaskPlannerAgent(),
+		agents.NewReviewerAgent(),
+		slowSyncer{delay: 200 * time.Millisecond},
+		slowSyncer{delay: 200 * time.Millisecond},
+	)
+
+	_, err := orch.Run(context.Background(), "行动项：@李雷 明天提交", Options{
+		MeetingDate: time.Date(2026, 3, 18, 10, 0, 0, 0, time.Local),
+		SyncTarget:  SyncJira,
+		SyncTimeout: 10 * time.Millisecond,
+	})
+	if err == nil {
+		t.Fatalf("expected timeout error")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("want deadline exceeded, got %v", err)
 	}
 }
