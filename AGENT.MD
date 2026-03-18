@@ -29,3 +29,19 @@ Reviewer Agent：检查任务是否缺负责人、截止时间、依赖关系
 ## 测试验证
 
 - [x] `go test ./...` 通过（使用仓库内 `GOCACHE/.gocache` 与 `GOTMPDIR/.gotmp` 执行）
+
+---
+
+## 二期子任务清单（持续完善）
+
+- [x] P1 支持多格式输入（`txt/md/json`）并自动提取会议日期
+- [x] P2 新增 Markdown 结果报告导出（用于复盘与周报）
+- [x] P3 同步层增强：失败重试（429/5xx/网络错误）与指数退避
+- [x] P4 编排器增强：Jira/Notion 并行同步 + 同步超时控制
+- [x] P5 增加工程化保障：GitHub Actions 自动测试
+- [x] P6 补充测试覆盖新增能力并验证通过
+- [x] P7 更新 README 与 log，提交并推送
+
+## 二期测试验证
+
+- [x] `go test ./...` 通过（新增 `input/report/retry/timeout` 测试）

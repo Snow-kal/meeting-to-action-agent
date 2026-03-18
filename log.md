@@ -21,3 +21,24 @@
 
 - 在 `AGENT.MD` 追加并勾选子任务清单，记录测试验证结果。
 - 新增 `log.md`，汇总每个 commit 的变更内容，便于追踪迭代过程。
+
+## 4) feat: add structured input, markdown report and resilient sync
+
+- 新增多格式输入解析（`txt/md/json`），并支持从 JSON 读取 `meeting_date/date`。
+- CLI 支持 `-sync-timeout`、`-max-retries`、`-report` 参数。
+- 新增 Markdown 报告生成器，输出决策/任务/检查项/同步结果汇总。
+- Jira/Notion 同步新增重试机制（429/5xx/网络异常，指数退避）。
+- 编排器支持同步超时控制，且 `sync-target=both` 时并行同步 Jira/Notion。
+
+## 5) test: cover input/report/retry and add sync timeout tests
+
+- 新增输入解析测试：`internal/input/loader_test.go`。
+- 新增报告生成测试：`internal/report/markdown_test.go`。
+- 新增重试逻辑测试：`internal/syncer/retry_test.go`。
+- 补充编排器同步超时测试：`internal/pipeline/orchestrator_test.go`。
+- 新增 GitHub Actions CI：`.github/workflows/ci.yml`，在 push/PR 自动跑 `go test ./...`。
+
+## 6) docs: update phase2 checklist and usage docs
+
+- `AGENT.MD` 新增并完成二期子任务清单（P1-P7）及测试验证记录。
+- `README.md` 更新二期能力说明（输入格式、并行同步、重试、超时、报告导出、CI）。
