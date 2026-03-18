@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/Snow-kal/meeting-to-action-agent/internal/pipeline"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/report"
 	"github.com/Snow-kal/meeting-to-action-agent/internal/runtime"
+	"github.com/Snow-kal/meeting-to-action-agent/internal/webui"
 )
 
 type ServerOptions struct {
@@ -52,6 +54,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/run", s.handleRun)
 	mux.HandleFunc("/healthz", s.handleHealthz)
+	mux.Handle("/", s.serveWeb())
 	return withCORS(mux)
 }
 
@@ -181,4 +184,29 @@ func withCORS(next http.Handler) http.Handler {
 
 func errorsIsContext(err error) bool {
 	return errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)
+}
+
+func (s *Server) serveWeb() http.Handler {
+	staticFS, err := webui.StaticFS()
+	if err != nil {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "web assets not found", http.StatusInternalServerError)
+		})
+	}
+
+	fileServer := http.FileServer(http.FS(staticFS))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			indexBytes, readErr := fs.ReadFile(staticFS, "index.html")
+			if readErr != nil {
+				http.Error(w, "index.html not found", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(indexBytes)
+			return
+		}
+		fileServer.ServeHTTP(w, r)
+	})
 }
