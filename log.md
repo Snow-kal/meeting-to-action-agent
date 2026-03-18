@@ -42,3 +42,27 @@
 
 - `AGENT.MD` 新增并完成二期子任务清单（P1-P7）及测试验证记录。
 - `README.md` 更新二期能力说明（输入格式、并行同步、重试、超时、报告导出、CI）。
+
+## 7) feat: add HTTP API, LLM hybrid mode and mapping config
+
+- 新增 HTTP API 服务程序：`cmd/meeting-to-action-api`，支持 `POST /run` 与 `GET /healthz`。
+- 新增 API 处理层：支持前端/Webhook 请求参数（`sync_target/dry_run/max_retries/sync_timeout/llm_mode` 等）。
+- 引入 LLM 混合抽取模式（规则 + 模型）：新增 OpenAI 客户端与抽取融合逻辑，失败自动回退规则模式并记录告警。
+- 编排器新增 `LLMMode`，支持规则抽取与模型抽取去重合并。
+- 新增 Jira/Notion 字段映射配置加载能力，可通过 JSON 模板自定义字段。
+- 新增运行时工厂统一构建编排器，CLI 与 API 复用同一初始化逻辑。
+- 新增映射样例文件：`examples/mapping.sample.json`。
+
+## 8) test: cover API endpoint, hybrid LLM merge and mapping config
+
+- 新增 `POST /run` API 测试与 Bad Request 测试。
+- 新增字段映射配置加载测试（默认配置与文件配置）。
+- 新增 LLM 客户端解析测试（mock chat completion）。
+- 新增运行时工厂测试（hybrid 模式缺少 API Key 的错误路径）。
+- 补充编排器 LLM 混合模式测试、同步客户端映射字段断言测试。
+
+## 9) docs: update phase3 checklist and API/LLM docs
+
+- `AGENT.MD` 新增并勾选三期任务（R1-R5）与验证记录。
+- `README.md` 增加 HTTP API 用法、LLM 混合模式配置、字段映射配置说明。
+- `log.md` 增补第 7-9 次提交改动摘要。

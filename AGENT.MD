@@ -45,3 +45,17 @@ Reviewer Agent：检查任务是否缺负责人、截止时间、依赖关系
 ## 二期测试验证
 
 - [x] `go test ./...` 通过（新增 `input/report/retry/timeout` 测试）
+
+---
+
+## 三期子任务清单（API + LLM + 字段映射）
+
+- [x] R1 增加 HTTP API 服务版（`POST /run`）供前端/Webhook 调用
+- [x] R2 接入 LLM 混合模式（规则 + 模型）增强决策/任务抽取
+- [x] R3 Jira/Notion 字段映射配置化（支持团队自定义模板）
+- [x] R4 补充测试（API、LLM 融合、字段映射）
+- [x] R5 更新 README 与 log，提交并推送
+
+## 三期测试验证
+
+- [x] `go test ./...` 通过（新增 `api/config/llm/runtime` 测试）
