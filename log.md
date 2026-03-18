@@ -105,3 +105,17 @@
 - `AGENT.MD` 新增并完成五期任务（G1-G5）。
 - `README.md` 增补前端配置小工具说明与新增 API 请求字段。
 - `log.md` 补充第 13-15 次提交摘要。
+
+## 16) feat: simplify web result to task-only view with status tags
+
+- 前端结果区改为仅显示任务，移除“决策 / Review 提示”列表展示。
+- 任务改为卡片化展示格式：标题 + 标签化元信息。
+- 负责人与截止时间状态可视化：有值显示蓝色标签，缺失显示红色“暂无”标签。
+- 优化结果区统计信息（任务数、同步记录）。
+
+## 17) test: add A/B/C/D meeting record validation sample
+
+- 新增会议记录验证样例：`examples/meeting.validation.abcd.md`（负责人使用 A/B/C/D）。
+- 规则提取增强：支持单字符负责人（如 A/B/C/D）。
+- 新增对应自动化验证测试，校验样例中至少提取 4 个任务并包含 A/B/C/D 负责人。
+- README 增加验证样例运行方式。
