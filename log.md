@@ -132,3 +132,26 @@
 - 标题字段自动识别为数据库中的 `title` 字段，不再强依赖固定 `Name` 名称。
 - 仅对数据库中存在的可匹配字段写入（rich_text/date），避免因缺少 `Owner/Due/...` 列导致失败。
 - 新增测试覆盖：完整 schema 场景 + 仅标题列（`名称`）最小数据库场景。
+
+## 20) feat: enrich multi-agent orchestration with ownership, deadline, risk and follow-up reasoning
+
+- 扩展领域模型：新增 `meeting_summary`、`conflicts`、`follow_up_questions`，并为决策/任务补充 `source_text`、`confidence`、`acceptance_criteria`、`risk_flags` 等字段。
+- `Recorder Agent` 增强为可抽取会议主题与讨论点，便于后续形成更完整的会议概览。
+- 新增 `Owner Agent` 与 `Deadline Agent`，在任务规划后执行职责归属识别和截止时间补全。
+- `Task Planner Agent` 强化最小可执行任务拆解，并生成验收标准与来源依据。
+- `Reviewer Agent` 新增风险提示、冲突检测、追问问题生成，支持区分推断负责人/推断截止时间。
+- 编排器、运行时工厂、LLM schema、Markdown 报告同步升级，贯通新的多智能体字段与输出结构。
+
+## 21) test: cover enriched multi-agent orchestration flows
+
+- 新增 `Recorder/Decision` 组合测试，验证讨论项过滤与主题抽取。
+- 新增 `Owner/Deadline` 测试，覆盖负责人识别、绝对/相对时间解析与启发式补全。
+- 扩展 `Task Planner/Reviewer/Orchestrator/LLM/Report` 测试，覆盖验收标准、风险标记、冲突检测、追问问题与新结构化字段。
+- 回归验证既有流程，确保六期增强不破坏前端、同步与 API 逻辑。
+
+## 22) docs: update phase6 checklist, architecture diagram and docs
+
+- `AGENT.MD` 追加并勾选六期子任务（H1-H8），记录测试验证结果。
+- 在 `AGENT.MD` 末尾补充多智能体总控架构图，展示从会议输入到 API/UI/报告/Jira/Notion 的完整链路。
+- `README.md` 增加六期能力说明，解释会议摘要、来源依据、验收标准、风险与冲突等新输出字段。
+- `log.md` 补充第 20-22 次提交摘要，便于追踪本轮实现。

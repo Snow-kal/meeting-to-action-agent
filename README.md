@@ -140,6 +140,35 @@ Notion:
 
 - `examples/mapping.sample.json`
 
+## 六期增强：多智能体总控
+
+这一阶段将项目从“纪要转任务”升级为“会议到执行”的闭环总控，新增能力包括：
+
+- `Recorder Agent` 额外提取会议主题、讨论点，形成 `meeting_summary`
+- `Decision Agent` 为决策输出补充 `source_text` 与 `confidence`
+- `Task Planner Agent` 为任务补充 `acceptance_criteria`、`risk_flags`、`source_text`、`confidence`
+- `Owner Agent` 区分明确负责人和推断负责人，未明确时统一标记 `暂无`
+- `Deadline Agent` 同时处理绝对时间、相对时间与启发式补全，并标记是否为推断截止时间
+- `Reviewer Agent` 新增风险识别、冲突检测、追问问题生成，不再只是简单补字段
+
+增强后的结果结构除了原有 `decisions/tasks/review_issues`，还会包含：
+
+- `meeting_summary`
+- `conflicts`
+- `follow_up_questions`
+- 任务级 `acceptance_criteria`
+- 任务级 `risk_flags`
+- 任务/决策级 `source_text`
+- 任务/决策级 `confidence`
+
+典型冲突检测包括：
+
+- 同一负责人在同一天被分配过多任务
+- 大任务却被分配了明显过短的截止时间
+- 截止时间早于会议日期
+
+系统会把自动补全的负责人/截止时间明确标记为推断结果，方便前端做“接受 / 修改”交互。
+
 ## 测试
 
 ```bash

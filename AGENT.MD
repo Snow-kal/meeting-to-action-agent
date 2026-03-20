@@ -84,3 +84,47 @@ Reviewer Agent：检查任务是否缺负责人、截止时间、依赖关系
 - [x] G3 后端 API 支持请求级 key 覆盖（LLM/Notion/Jira）
 - [x] G4 运行时工厂支持请求级 key 覆盖初始化
 - [x] G5 补充测试并更新文档、提交推送
+
+---
+
+## 六期子任务清单（多智能体总控增强）
+
+- [x] H1 扩展领域模型：补充 `source_text`、`acceptance_criteria`、`risk_flags`、`confidence`、`conflicts`、`follow_up_questions`
+- [x] H2 实现 `Owner Agent`：职责归属识别与明确/模糊责任区分
+- [x] H3 实现 `Deadline Agent`：绝对/相对时间识别与合理截止时间补全
+- [x] H4 强化 `Task Planner Agent`：最小可执行任务拆解、来源依据、验收标准生成
+- [x] H5 强化 `Reviewer Agent`：风险识别、冲突检测、追问问题生成
+- [x] H6 更新 `LLM` schema 与规则/模型融合逻辑，兼容新增字段
+- [x] H7 补充测试（Owner/Deadline/Acceptance/Risk/Conflict/Follow-up/集成流程）
+- [x] H8 更新 README、log，并在任务完成后于 `AGENT.MD` 追加架构图
+
+## 六期测试验证
+
+- [x] `go test ./...` 通过（新增 Recorder/Decision/Owner/Deadline/Reviewer/LLM/Report/Orchestrator 测试）
+
+## 六期架构图
+
+```mermaid
+flowchart TD
+    A[Meeting Input] --> B[Recorder Agent]
+    B --> B1[Topics / Discussion Points]
+    B --> C[Decision Agent]
+    C --> D[Task Planner Agent]
+    C --> E[Owner Agent]
+    C --> F[Deadline Agent]
+    D --> E
+    E --> F
+    F --> G[Reviewer Agent]
+    G --> G1[Review Issues]
+    G --> G2[Risk Flags]
+    G --> G3[Conflicts]
+    G --> G4[Follow-up Questions]
+    G --> H[Pipeline Result]
+    H --> I[HTTP API / Web UI]
+    H --> J[Markdown Report]
+    H --> K[Sync Agent Layer]
+    K --> L[Jira]
+    K --> M[Notion]
+    N[LLM Hybrid Extractor] --> C
+    N --> D
+```
