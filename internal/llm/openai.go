@@ -45,16 +45,22 @@ func NewOpenAIClientFromEnv() *OpenAIClient {
 
 type llmOutput struct {
 	Decisions []struct {
-		Text      string `json:"text"`
-		OwnerHint string `json:"owner_hint"`
-		DueHint   string `json:"due_hint"`
+		Text       string  `json:"text"`
+		OwnerHint  string  `json:"owner_hint"`
+		DueHint    string  `json:"due_hint"`
+		SourceText string  `json:"source_text"`
+		Confidence float64 `json:"confidence"`
 	} `json:"decisions"`
 	Tasks []struct {
-		Title        string   `json:"title"`
-		Description  string   `json:"description"`
-		Owner        string   `json:"owner"`
-		DueHint      string   `json:"due_hint"`
-		Dependencies []string `json:"dependencies"`
+		Title              string   `json:"title"`
+		Description        string   `json:"description"`
+		Owner              string   `json:"owner"`
+		DueHint            string   `json:"due_hint"`
+		Dependencies       []string `json:"dependencies"`
+		AcceptanceCriteria string   `json:"acceptance_criteria"`
+		RiskFlags          []string `json:"risk_flags"`
+		SourceText         string   `json:"source_text"`
+		Confidence         float64  `json:"confidence"`
 	} `json:"tasks"`
 }
 
@@ -106,10 +112,12 @@ func (c *OpenAIClient) Extract(ctx context.Context, rawText string, meetingDate 
 			continue
 		}
 		decisions = append(decisions, domain.Decision{
-			ID:        fmt.Sprintf("LLM-DEC-%03d", i+1),
-			Text:      strings.TrimSpace(d.Text),
-			OwnerHint: strings.TrimSpace(d.OwnerHint),
-			DueHint:   strings.TrimSpace(d.DueHint),
+			ID:         fmt.Sprintf("LLM-DEC-%03d", i+1),
+			Text:       strings.TrimSpace(d.Text),
+			OwnerHint:  strings.TrimSpace(d.OwnerHint),
+			DueHint:    strings.TrimSpace(d.DueHint),
+			SourceText: strings.TrimSpace(d.SourceText),
+			Confidence: d.Confidence,
 		})
 	}
 
@@ -121,12 +129,16 @@ func (c *OpenAIClient) Extract(ctx context.Context, rawText string, meetingDate 
 		}
 		due, _ := timeutil.ExtractDueDate(t.DueHint, meetingDate)
 		tasks = append(tasks, domain.Task{
-			ID:           fmt.Sprintf("LLM-TASK-%03d", i+1),
-			Title:        title,
-			Description:  strings.TrimSpace(t.Description),
-			Owner:        strings.TrimSpace(t.Owner),
-			DueDate:      due,
-			Dependencies: normalizeDependencies(t.Dependencies),
+			ID:                 fmt.Sprintf("LLM-TASK-%03d", i+1),
+			Title:              title,
+			Description:        strings.TrimSpace(t.Description),
+			Owner:              strings.TrimSpace(t.Owner),
+			DueDate:            due,
+			Dependencies:       normalizeDependencies(t.Dependencies),
+			AcceptanceCriteria: strings.TrimSpace(t.AcceptanceCriteria),
+			RiskFlags:          normalizeDependencies(t.RiskFlags),
+			SourceText:         strings.TrimSpace(t.SourceText),
+			Confidence:         t.Confidence,
 		})
 	}
 
@@ -141,8 +153,8 @@ meeting_notes:
 
 Output JSON schema:
 {
-  "decisions":[{"text":"string","owner_hint":"string","due_hint":"string"}],
-  "tasks":[{"title":"string","description":"string","owner":"string","due_hint":"string","dependencies":["string"]}]
+  "decisions":[{"text":"string","owner_hint":"string","due_hint":"string","source_text":"string","confidence":0.0}],
+  "tasks":[{"title":"string","description":"string","owner":"string","due_hint":"string","dependencies":["string"],"acceptance_criteria":"string","risk_flags":["string"],"source_text":"string","confidence":0.0}]
 }
 `, meetingDate.Format("2006-01-02"), rawText)
 

@@ -40,6 +40,8 @@ type Orchestrator struct {
 	Recorder *agents.RecorderAgent
 	Decision *agents.DecisionAgent
 	Planner  *agents.TaskPlannerAgent
+	Owner    *agents.OwnerAgent
+	Deadline *agents.DeadlineAgent
 	Reviewer *agents.ReviewerAgent
 	LLM      LLMExtractor
 	Jira     syncer.TaskSyncer
@@ -50,6 +52,8 @@ func NewOrchestrator(
 	recorder *agents.RecorderAgent,
 	decision *agents.DecisionAgent,
 	planner *agents.TaskPlannerAgent,
+	owner *agents.OwnerAgent,
+	deadline *agents.DeadlineAgent,
 	reviewer *agents.ReviewerAgent,
 	llmExtractor LLMExtractor,
 	jira syncer.TaskSyncer,
@@ -59,6 +63,8 @@ func NewOrchestrator(
 		Recorder: recorder,
 		Decision: decision,
 		Planner:  planner,
+		Owner:    owner,
+		Deadline: deadline,
 		Reviewer: reviewer,
 		LLM:      llmExtractor,
 		Jira:     jira,
@@ -102,14 +108,23 @@ func (o *Orchestrator) Run(ctx context.Context, rawText string, opts Options) (*
 
 	plannedTasks := o.Planner.Plan(record, decisions)
 	plannedTasks = mergeTasks(plannedTasks, llmTasks)
-	reviewedTasks, issues := o.Reviewer.Review(plannedTasks, meetingDate)
+	if o.Owner != nil {
+		plannedTasks = o.Owner.Resolve(plannedTasks, decisions)
+	}
+	if o.Deadline != nil {
+		plannedTasks = o.Deadline.Resolve(plannedTasks, decisions, meetingDate)
+	}
+	reviewedTasks, issues, conflicts, followUpQuestions := o.Reviewer.Review(plannedTasks, meetingDate)
 
 	result := &domain.PipelineResult{
-		Record:    record,
-		Decisions: decisions,
-		Tasks:     reviewedTasks,
-		Issues:    issues,
-		Warnings:  warnings,
+		MeetingSummary:    buildMeetingSummary(record, decisions, reviewedTasks),
+		Record:            record,
+		Decisions:         decisions,
+		Tasks:             reviewedTasks,
+		Issues:            issues,
+		Conflicts:         conflicts,
+		FollowUpQuestions: followUpQuestions,
+		Warnings:          warnings,
 	}
 
 	switch opts.SyncTarget {
@@ -187,16 +202,17 @@ func runSyncWithTimeout(
 
 func mergeDecisions(rule, llm []domain.Decision) []domain.Decision {
 	result := make([]domain.Decision, 0, len(rule)+len(llm))
-	seen := map[string]struct{}{}
+	indexByKey := map[string]int{}
 	add := func(d domain.Decision) {
 		key := normalizeText(d.Text)
 		if key == "" {
 			return
 		}
-		if _, ok := seen[key]; ok {
+		if idx, ok := indexByKey[key]; ok {
+			result[idx] = mergeDecision(result[idx], d)
 			return
 		}
-		seen[key] = struct{}{}
+		indexByKey[key] = len(result)
 		result = append(result, d)
 	}
 	for _, d := range rule {
@@ -215,16 +231,17 @@ func mergeDecisions(rule, llm []domain.Decision) []domain.Decision {
 
 func mergeTasks(rule, llm []domain.Task) []domain.Task {
 	result := make([]domain.Task, 0, len(rule)+len(llm))
-	seen := map[string]struct{}{}
+	indexByKey := map[string]int{}
 	add := func(t domain.Task) {
-		key := normalizeText(t.Title) + "|" + normalizeText(t.Owner)
-		if key == "|" {
+		key := normalizeText(t.Title)
+		if key == "" {
 			return
 		}
-		if _, ok := seen[key]; ok {
+		if idx, ok := indexByKey[key]; ok {
+			result[idx] = mergeTask(result[idx], t)
 			return
 		}
-		seen[key] = struct{}{}
+		indexByKey[key] = len(result)
 		result = append(result, t)
 	}
 	for _, t := range rule {
@@ -242,4 +259,54 @@ func mergeTasks(rule, llm []domain.Task) []domain.Task {
 func normalizeText(s string) string {
 	trimmed := strings.TrimSpace(strings.ToLower(s))
 	return strings.Join(strings.Fields(trimmed), " ")
+}
+
+func mergeDecision(base, incoming domain.Decision) domain.Decision {
+	if base.OwnerHint == "" {
+		base.OwnerHint = incoming.OwnerHint
+	}
+	if base.DueHint == "" {
+		base.DueHint = incoming.DueHint
+	}
+	if base.SourceText == "" {
+		base.SourceText = incoming.SourceText
+	}
+	if incoming.Confidence > base.Confidence {
+		base.Confidence = incoming.Confidence
+	}
+	return base
+}
+
+func mergeTask(base, incoming domain.Task) domain.Task {
+	if base.Description == "" {
+		base.Description = incoming.Description
+	}
+	if base.Owner == "" {
+		base.Owner = incoming.Owner
+	}
+	if base.DueDate == nil {
+		base.DueDate = incoming.DueDate
+	}
+	if len(base.Dependencies) == 0 {
+		base.Dependencies = incoming.Dependencies
+	}
+	if base.SourceText == "" {
+		base.SourceText = incoming.SourceText
+	}
+	if base.AcceptanceCriteria == "" {
+		base.AcceptanceCriteria = incoming.AcceptanceCriteria
+	}
+	base.RiskFlags = append(base.RiskFlags, incoming.RiskFlags...)
+	if incoming.Confidence > base.Confidence {
+		base.Confidence = incoming.Confidence
+	}
+	return base
+}
+
+func buildMeetingSummary(record domain.MeetingRecord, decisions []domain.Decision, tasks []domain.Task) string {
+	topics := "未识别议题"
+	if len(record.Topics) > 0 {
+		topics = strings.Join(record.Topics, " / ")
+	}
+	return fmt.Sprintf("会议围绕 %s 展开，形成 %d 条决策与 %d 条任务。", topics, len(decisions), len(tasks))
 }

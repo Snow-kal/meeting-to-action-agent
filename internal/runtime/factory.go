@@ -55,6 +55,8 @@ func NewOrchestrator(opts FactoryOptions) (*pipeline.Orchestrator, error) {
 		agents.NewRecorderAgent(),
 		agents.NewDecisionAgent(),
 		agents.NewTaskPlannerAgent(),
+		agents.NewOwnerAgent(),
+		agents.NewDeadlineAgent(),
 		agents.NewReviewerAgent(),
 		extractor,
 		jiraClient,
