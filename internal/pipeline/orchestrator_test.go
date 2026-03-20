@@ -18,6 +18,8 @@ func TestOrchestratorRun(t *testing.T) {
 		agents.NewRecorderAgent(),
 		agents.NewDecisionAgent(),
 		agents.NewTaskPlannerAgent(),
+		agents.NewOwnerAgent(),
+		agents.NewDeadlineAgent(),
 		agents.NewReviewerAgent(),
 		nil,
 		syncer.NewJiraClientFromEnv(true),
@@ -42,6 +44,9 @@ func TestOrchestratorRun(t *testing.T) {
 	}
 	if len(result.Tasks) == 0 {
 		t.Fatalf("expected tasks")
+	}
+	if result.MeetingSummary == "" {
+		t.Fatalf("expected meeting summary")
 	}
 	if len(result.Synced) != len(result.Tasks)*2 {
 		t.Fatalf("expected sync results for both targets")
@@ -92,6 +97,8 @@ func TestOrchestratorSyncTimeout(t *testing.T) {
 		agents.NewRecorderAgent(),
 		agents.NewDecisionAgent(),
 		agents.NewTaskPlannerAgent(),
+		agents.NewOwnerAgent(),
+		agents.NewDeadlineAgent(),
 		agents.NewReviewerAgent(),
 		nil,
 		slowSyncer{delay: 200 * time.Millisecond},
@@ -116,6 +123,8 @@ func TestOrchestratorHybridLLM(t *testing.T) {
 		agents.NewRecorderAgent(),
 		agents.NewDecisionAgent(),
 		agents.NewTaskPlannerAgent(),
+		agents.NewOwnerAgent(),
+		agents.NewDeadlineAgent(),
 		agents.NewReviewerAgent(),
 		mockExtractor{},
 		syncer.NewJiraClientFromEnv(true),
@@ -150,6 +159,8 @@ func TestMeetingValidationABCD(t *testing.T) {
 		agents.NewRecorderAgent(),
 		agents.NewDecisionAgent(),
 		agents.NewTaskPlannerAgent(),
+		agents.NewOwnerAgent(),
+		agents.NewDeadlineAgent(),
 		agents.NewReviewerAgent(),
 		nil,
 		syncer.NewJiraClientFromEnv(true),
@@ -181,5 +192,30 @@ func TestMeetingValidationABCD(t *testing.T) {
 		if !ownerSet[owner] {
 			t.Fatalf("expected owner %s in extracted tasks", owner)
 		}
+	}
+}
+
+func TestOrchestratorGeneratesFollowUpQuestions(t *testing.T) {
+	orch := NewOrchestrator(
+		agents.NewRecorderAgent(),
+		agents.NewDecisionAgent(),
+		agents.NewTaskPlannerAgent(),
+		agents.NewOwnerAgent(),
+		agents.NewDeadlineAgent(),
+		agents.NewReviewerAgent(),
+		nil,
+		syncer.NewJiraClientFromEnv(true),
+		syncer.NewNotionClientFromEnv(true),
+	)
+
+	result, err := orch.Run(context.Background(), "任务：推进发版流程", Options{
+		MeetingDate: time.Date(2026, 3, 18, 10, 0, 0, 0, time.Local),
+		SyncTarget:  SyncNone,
+	})
+	if err != nil {
+		t.Fatalf("run failed: %v", err)
+	}
+	if len(result.FollowUpQuestions) == 0 {
+		t.Fatalf("expected follow up questions")
 	}
 }

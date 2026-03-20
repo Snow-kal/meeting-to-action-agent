@@ -33,6 +33,9 @@ func TestTaskPlannerPlan(t *testing.T) {
 	if len(task.Dependencies) != 1 || task.Dependencies[0] != "TASK-007" {
 		t.Fatalf("unexpected dependencies: %+v", task.Dependencies)
 	}
+	if task.SourceText == "" || task.AcceptanceCriteria == "" {
+		t.Fatalf("expected source text and acceptance criteria, got %+v", task)
+	}
 }
 
 func TestTaskPlannerSingleLetterOwner(t *testing.T) {

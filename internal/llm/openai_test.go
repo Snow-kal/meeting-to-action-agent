@@ -15,7 +15,7 @@ func TestOpenAIClientExtract(t *testing.T) {
   "choices":[
     {
       "message":{
-        "content":"{\"decisions\":[{\"text\":\"确定下周上线\",\"owner_hint\":\"张三\",\"due_hint\":\"下周一\"}],\"tasks\":[{\"title\":\"准备发布清单\",\"description\":\"补齐回滚方案\",\"owner\":\"李四\",\"due_hint\":\"明天\",\"dependencies\":[\"TASK-101\"]}]}"
+        "content":"{\"decisions\":[{\"text\":\"确定下周上线\",\"owner_hint\":\"张三\",\"due_hint\":\"下周一\",\"source_text\":\"决策：确定下周上线\",\"confidence\":0.91}],\"tasks\":[{\"title\":\"准备发布清单\",\"description\":\"补齐回滚方案\",\"owner\":\"李四\",\"due_hint\":\"明天\",\"dependencies\":[\"TASK-101\"],\"acceptance_criteria\":\"清单已提交\",\"risk_flags\":[\"cross_team\"],\"source_text\":\"行动项：李四准备发布清单\",\"confidence\":0.88}]}"
       }
     }
   ]
@@ -39,5 +39,8 @@ func TestOpenAIClientExtract(t *testing.T) {
 	}
 	if tasks[0].DueDate == nil || tasks[0].DueDate.Format("2006-01-02") != "2026-03-19" {
 		t.Fatalf("unexpected due date: %+v", tasks[0].DueDate)
+	}
+	if tasks[0].AcceptanceCriteria == "" || tasks[0].SourceText == "" || tasks[0].Confidence == 0 {
+		t.Fatalf("expected enriched task fields, got %+v", tasks[0])
 	}
 }
