@@ -1,0 +1,109 @@
+<svg width="1280" height="980" viewBox="0 0 1280 980" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font: 700 30px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #F8FAFC; }
+      .layer { font: 700 20px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #F8FAFC; }
+      .boxTitle { font: 700 17px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #1E3A8A; }
+      .boxText { font: 500 14px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #1E3A8A; }
+      .small { font: 500 13px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #CBD5E1; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10V0Z" fill="#E5E7EB"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="980" fill="#18181B"/>
+  <text x="60" y="58" class="title">meeting-to-action-agent</text>
+  <text x="60" y="86" class="small">会议记录 → 决策提取 → 任务拆解 → 负责人识别 → 截止时间补全 → Jira / Notion 同步</text>
+
+  <rect x="300" y="110" width="680" height="180" fill="#4B4B4B" stroke="#71717A" stroke-width="2"/>
+  <text x="610" y="140" text-anchor="middle" class="layer">接入层</text>
+
+  <rect x="340" y="155" width="220" height="78" fill="#F8FAFC" stroke="#60A5FA" stroke-width="2"/>
+  <text x="450" y="190" text-anchor="middle" class="boxTitle">Web UI</text>
+  <text x="450" y="214" text-anchor="middle" class="boxText">index.html / app.js</text>
+
+  <rect x="340" y="255" width="170" height="78" fill="#F8FAFC" stroke="#60A5FA" stroke-width="2"/>
+  <text x="425" y="288" text-anchor="middle" class="boxTitle">HTTP API</text>
+  <text x="425" y="312" text-anchor="middle" class="boxText">POST /run</text>
+
+  <rect x="610" y="255" width="240" height="78" fill="#F8FAFC" stroke="#60A5FA" stroke-width="2"/>
+  <text x="730" y="288" text-anchor="middle" class="boxTitle">CLI</text>
+  <text x="730" y="312" text-anchor="middle" class="boxText">cmd/meeting-to-action</text>
+
+  <path d="M450 233V255" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="60" y="360" width="1160" height="210" fill="#4B4B4B" stroke="#71717A" stroke-width="2"/>
+  <text x="640" y="392" text-anchor="middle" class="layer">运行时与配置层</text>
+
+  <rect x="435" y="410" width="410" height="74" fill="#F0FDF4" stroke="#6EE7B7" stroke-width="2"/>
+  <text x="640" y="442" text-anchor="middle" class="boxTitle">Runtime Factory</text>
+  <text x="640" y="466" text-anchor="middle" class="boxText">依赖装配 / 请求级配置覆盖</text>
+
+  <rect x="120" y="520" width="190" height="70" fill="#F0FDF4" stroke="#6EE7B7" stroke-width="2"/>
+  <text x="215" y="550" text-anchor="middle" class="boxTitle">Input Loader</text>
+  <text x="215" y="574" text-anchor="middle" class="boxText">txt / md / json</text>
+
+  <rect x="395" y="520" width="200" height="70" fill="#F0FDF4" stroke="#6EE7B7" stroke-width="2"/>
+  <text x="495" y="550" text-anchor="middle" class="boxTitle">LLM Hybrid</text>
+  <text x="495" y="574" text-anchor="middle" class="boxText">规则抽取 + 模型增强</text>
+
+  <rect x="680" y="520" width="220" height="70" fill="#F0FDF4" stroke="#6EE7B7" stroke-width="2"/>
+  <text x="790" y="550" text-anchor="middle" class="boxTitle">Due Parser</text>
+  <text x="790" y="574" text-anchor="middle" class="boxText">绝对 / 相对时间解析</text>
+
+  <rect x="985" y="520" width="190" height="70" fill="#F0FDF4" stroke="#6EE7B7" stroke-width="2"/>
+  <text x="1080" y="550" text-anchor="middle" class="boxTitle">Mapping Config</text>
+  <text x="1080" y="574" text-anchor="middle" class="boxText">Jira / Notion 字段映射</text>
+
+  <path d="M425 333V360C425 390 580 390 580 410" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M730 333V410" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M640 484V520" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="100" y="615" width="860" height="295" fill="#4B4B4B" stroke="#71717A" stroke-width="2"/>
+  <text x="530" y="648" text-anchor="middle" class="layer">多智能体流水线</text>
+
+  <rect x="235" y="690" width="250" height="74" fill="#FFF7ED" stroke="#FB923C" stroke-width="2"/>
+  <text x="360" y="720" text-anchor="middle" class="boxTitle">Recorder Agent</text>
+  <text x="360" y="744" text-anchor="middle" class="boxText">议题 / 讨论点 / 摘要</text>
+
+  <rect x="235" y="790" width="250" height="74" fill="#FFF7ED" stroke="#FB923C" stroke-width="2"/>
+  <text x="360" y="820" text-anchor="middle" class="boxTitle">Decision Agent</text>
+  <text x="360" y="844" text-anchor="middle" class="boxText">关键决策 / 来源依据 / 置信度</text>
+
+  <rect x="545" y="690" width="250" height="74" fill="#FFF7ED" stroke="#FB923C" stroke-width="2"/>
+  <text x="670" y="720" text-anchor="middle" class="boxTitle">Task Planner Agent</text>
+  <text x="670" y="744" text-anchor="middle" class="boxText">最小任务 / 验收标准</text>
+
+  <rect x="545" y="790" width="250" height="74" fill="#FFF7ED" stroke="#FB923C" stroke-width="2"/>
+  <text x="670" y="820" text-anchor="middle" class="boxTitle">Owner + Deadline Agent</text>
+  <text x="670" y="844" text-anchor="middle" class="boxText">负责人识别 / 截止时间补全</text>
+
+  <path d="M310 590V690" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M495 590V650C495 670 670 670 670 690" stroke="#E5E7EB" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
+  <path d="M790 590V790" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M360 764V790" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M485 827H545" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M485 827C525 827 545 744 545 727" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="1010" y="615" width="210" height="295" fill="#4B4B4B" stroke="#71717A" stroke-width="2"/>
+  <text x="1115" y="648" text-anchor="middle" class="layer">结果与交付</text>
+
+  <rect x="1045" y="690" width="140" height="74" fill="#EFF6FF" stroke="#60A5FA" stroke-width="2"/>
+  <text x="1115" y="720" text-anchor="middle" class="boxTitle">Result JSON</text>
+  <text x="1115" y="744" text-anchor="middle" class="boxText">summary / tasks</text>
+
+  <rect x="1045" y="790" width="140" height="74" fill="#EFF6FF" stroke="#60A5FA" stroke-width="2"/>
+  <text x="1115" y="820" text-anchor="middle" class="boxTitle">Report</text>
+  <text x="1115" y="844" text-anchor="middle" class="boxText">Markdown</text>
+
+  <path d="M1105 590V690" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M1105 764V790" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="885" y="930" width="160" height="36" fill="#F5F3FF" stroke="#A78BFA" stroke-width="2"/>
+  <text x="965" y="953" text-anchor="middle" class="boxText">Jira</text>
+  <rect x="1085" y="930" width="160" height="36" fill="#F5F3FF" stroke="#A78BFA" stroke-width="2"/>
+  <text x="1165" y="953" text-anchor="middle" class="boxText">Notion</text>
+  <path d="M1115 864V900H965V930" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M1115 864V930H1165" stroke="#E5E7EB" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

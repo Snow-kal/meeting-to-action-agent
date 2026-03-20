@@ -104,27 +104,4 @@ Reviewer Agent：检查任务是否缺负责人、截止时间、依赖关系
 
 ## 六期架构图
 
-```mermaid
-flowchart TD
-    A[Meeting Input] --> B[Recorder Agent]
-    B --> B1[Topics / Discussion Points]
-    B --> C[Decision Agent]
-    C --> D[Task Planner Agent]
-    C --> E[Owner Agent]
-    C --> F[Deadline Agent]
-    D --> E
-    E --> F
-    F --> G[Reviewer Agent]
-    G --> G1[Review Issues]
-    G --> G2[Risk Flags]
-    G --> G3[Conflicts]
-    G --> G4[Follow-up Questions]
-    G --> H[Pipeline Result]
-    H --> I[HTTP API / Web UI]
-    H --> J[Markdown Report]
-    H --> K[Sync Agent Layer]
-    K --> L[Jira]
-    K --> M[Notion]
-    N[LLM Hybrid Extractor] --> C
-    N --> D
-```
+![六期多智能体总控架构图](./docs/architecture-overview.svg)
